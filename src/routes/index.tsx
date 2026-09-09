@@ -1,24 +1,51 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, ClientOnly } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+// The Vortex dashboard is a client-side app (Supabase auth, browser-only
+// state), so it mounts after hydration only.
+const VortexApp = lazy(() => import("../vortex/VortexApp.jsx"));
+
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Vortex — Control Panel" },
+      {
+        name: "description",
+        content:
+          "Vortex control panel: manage Meta business tools, ad accounts, payments and team permissions from one dashboard.",
+      },
+      { property: "og:title", content: "Vortex — Control Panel" },
+      {
+        property: "og:description",
+        content:
+          "Vortex control panel: manage Meta business tools, ad accounts, payments and team permissions from one dashboard.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+    links: [{ rel: "icon", href: "/logo_vortex.png", type: "image/png" }],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
+    <ClientOnly
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#0a0c10]">
+          <img src="/logo_vortex.png" alt="Vortex" className="h-16 w-16 animate-pulse" />
+        </div>
+      }
     >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+      <Suspense
+        fallback={
+          <div className="flex min-h-screen items-center justify-center bg-[#0a0c10]">
+            <img src="/logo_vortex.png" alt="Vortex" className="h-16 w-16 animate-pulse" />
+          </div>
+        }
+      >
+        <VortexApp />
+      </Suspense>
+    </ClientOnly>
   );
 }
