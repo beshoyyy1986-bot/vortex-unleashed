@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import {
   CTA_TYPES, MetaError, OBJECTIVES, graphGet, graphGetAll, graphPost,
-  listRegions, searchCities, searchCountries, uploadAdImage,
+  listRegions, searchCountries, uploadAdImage,
 } from "../lib/metaApi.js";
 import {
   deleteProfile, getActiveId, listProfiles, saveProfile, setActiveId,
@@ -139,7 +139,7 @@ export default function DarkPostStudio({ onClose }) {
 
   /* ── creative form ── */
   const [form, setForm] = useState({
-    name: "Dark Post", message: "", headline: "", description: "",
+    name: "Dark Post", message: "", headline: "",
     link: "", cta: "LEARN_MORE", objective: "OUTCOME_TRAFFIC",
     budget: "10", days: "3", status: "PAUSED",
     gender: "all", ageMin: 18, ageMax: 65,
@@ -158,15 +158,12 @@ export default function DarkPostStudio({ onClose }) {
   };
 
   /* ── geo targeting ── */
-  const [geoMode, setGeoMode] = useState("country");  // country | region | city
+  const [geoMode, setGeoMode] = useState("country");  // country | region
   const [countryQ, setCountryQ] = useState("");
   const [countryOpts, setCountryOpts] = useState([]);
   const [country, setCountry] = useState(null);
   const [regions, setRegions] = useState([]);
   const [pickedRegions, setPickedRegions] = useState([]);
-  const [cityQ, setCityQ] = useState("");
-  const [cityOpts, setCityOpts] = useState([]);
-  const [pickedCities, setPickedCities] = useState([]);
   const [geoBusy, setGeoBusy] = useState(false);
 
   useEffect(() => {
@@ -178,7 +175,7 @@ export default function DarkPostStudio({ onClose }) {
   }, [countryQ, token]);
 
   const chooseCountry = async (c) => {
-    setCountry(c); setPickedRegions([]); setPickedCities([]); setRegions([]);
+    setCountry(c); setPickedRegions([]); setRegions([]);
     if (geoMode !== "country") {
       setGeoBusy(true);
       try { setRegions(await listRegions(c.country_code, token)); }
@@ -198,14 +195,6 @@ export default function DarkPostStudio({ onClose }) {
     }
   }, [geoMode, country, regions.length, token, notify]);
 
-  useEffect(() => {
-    if (geoMode !== "city" || !country || !token) return;
-    const id = setTimeout(async () => {
-      try { setCityOpts(await searchCities(cityQ, country.country_code, token)); } catch { /* ignore */ }
-    }, 400);
-    return () => clearTimeout(id);
-  }, [cityQ, geoMode, country, token]);
-
   const geoSpec = () => {
     if (!country) return null;
     if (geoMode === "country") return { countries: [country.country_code] };
@@ -214,8 +203,7 @@ export default function DarkPostStudio({ onClose }) {
       if (!list.length) return { countries: [country.country_code] };
       return { regions: list.map(r => ({ key: r.key })) };
     }
-    if (!pickedCities.length) return { countries: [country.country_code] };
-    return { cities: pickedCities.map(c => ({ key: c.key, radius: 25, distance_unit: "kilometer" })) };
+    return { countries: [country.country_code] };
   };
 
   /* ── publish ── */
@@ -267,7 +255,8 @@ export default function DarkPostStudio({ onClose }) {
         publisher_platforms: ["facebook", "instagram"],
         targeting_automation: { advantage_audience: 0 },
       };
-      const start = new Date(Date.now() + 5 * 60 * 1000);
+      // العرض يبدأ تلقائياً بعد 15 دقيقة من لحظة النشر
+      const start = new Date(Date.now() + 15 * 60 * 1000);
       const end = new Date(start.getTime() + Number(form.days || 1) * 86400000);
       const adsetBody = {
         name: `${form.name} — Ad Set`,
@@ -276,6 +265,7 @@ export default function DarkPostStudio({ onClose }) {
         billing_event: objective.billing,
         optimization_goal: objective.goal,
         bid_strategy: "LOWEST_COST_WITHOUT_CAP",
+        is_adset_budget_sharing_enabled: false,
         targeting,
         start_time: start.toISOString(),
         end_time: end.toISOString(),
@@ -308,7 +298,6 @@ export default function DarkPostStudio({ onClose }) {
               link: linkUrl,
               image_hash: h,
               name: form.headline || form.name,
-              description: form.description || undefined,
               call_to_action: cta,
             })),
           },
@@ -321,7 +310,6 @@ export default function DarkPostStudio({ onClose }) {
             link: linkUrl,
             image_hash: hashes[0],
             name: form.headline || undefined,
-            description: form.description || undefined,
             call_to_action: cta,
           },
         };
@@ -573,10 +561,12 @@ export default function DarkPostStudio({ onClose }) {
 
         {/* ── CREATE ── */}
         {tab === "create" && (
-          <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[1.35fr_1fr]">
+          <div className="mx-auto grid max-w-[1700px] items-start gap-5 md:grid-cols-2 xl:grid-cols-3">
+
+            {/* عمود 1 — الوجهة والمحتوى */}
             <div className="space-y-5">
               <Section title="الوجهة" hint="الحساب الإعلاني والصفحة اللي هيتنشر عليها الدارك بوست">
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-3">
                   <div>
                     <label className={label}>الحساب الإعلاني</label>
                     <select className={field} value={actId} onChange={e => setActId(e.target.value)}>
@@ -615,21 +605,18 @@ export default function DarkPostStudio({ onClose }) {
                     <label className={label}>نص الإعلان</label>
                     <textarea rows={4} className={field} value={form.message} onChange={e => set("message", e.target.value)} placeholder="اكتب محتوى الإعلان هنا…" />
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <label className={label}>العنوان الرئيسي</label>
-                      <input className={field} value={form.headline} onChange={e => set("headline", e.target.value)} placeholder="اختياري" />
-                    </div>
-                    <div>
-                      <label className={label}>الوصف</label>
-                      <input className={field} value={form.description} onChange={e => set("description", e.target.value)} placeholder="اختياري" />
-                    </div>
+                  <div>
+                    <label className={label}>العنوان الرئيسي</label>
+                    <input className={field} value={form.headline} onChange={e => set("headline", e.target.value)} placeholder="اختياري" />
                   </div>
                 </div>
               </Section>
+            </div>
 
+            {/* عمود 2 — الهدف والاستهداف */}
+            <div className="space-y-5">
               <Section title="الهدف والوجهة">
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-3">
                   <div>
                     <label className={label}>هدف الإعلان</label>
                     <select className={field} value={form.objective} onChange={e => set("objective", e.target.value)}>
@@ -650,18 +637,16 @@ export default function DarkPostStudio({ onClose }) {
                       </div>
                     </>
                   ) : (
-                    <div className="flex items-end">
-                      <p className="rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs text-violet-200">
-                        {objective.messenger ? "الوجهة: رسائل Messenger على الصفحة المختارة" : "لا يحتاج رابط"}
-                      </p>
-                    </div>
+                    <p className="rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs text-violet-200">
+                      {objective.messenger ? "الوجهة: رسائل Messenger على الصفحة المختارة" : "لا يحتاج رابط"}
+                    </p>
                   )}
                 </div>
               </Section>
 
               <Section title="الاستهداف">
                 <div className="mb-3 flex gap-1.5">
-                  {[["country", "دولة كاملة"], ["region", "محافظات"], ["city", "مدن"]].map(([id, lb]) => (
+                  {[["country", "دولة كاملة"], ["region", "محافظات"]].map(([id, lb]) => (
                     <button key={id} onClick={() => setGeoMode(id)}
                       className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
                         geoMode === id ? "bg-violet-600 text-white" : "bg-white/5 text-slate-400 hover:bg-white/10"}`}>{lb}</button>
@@ -707,24 +692,6 @@ export default function DarkPostStudio({ onClose }) {
                   </div>
                 )}
 
-                {geoMode === "city" && country && (
-                  <div className="mt-4">
-                    <label className={label}>ابحث عن مدينة</label>
-                    <input className={field} value={cityQ} onChange={e => setCityQ(e.target.value)} placeholder="اسم المدينة بالإنجليزية…" />
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {pickedCities.map(c => <Pill key={c.key} onRemove={() => setPickedCities(p => p.filter(x => x.key !== c.key))}>{c.name}</Pill>)}
-                    </div>
-                    <div className="mt-2 max-h-40 overflow-y-auto rounded-xl border border-white/10 bg-[#0b0e17]">
-                      {cityOpts.map(c => (
-                        <button key={c.key} onClick={() => setPickedCities(p => p.some(x => x.key === c.key) ? p : [...p, c])}
-                          className="block w-full px-3 py-2 text-start text-sm text-slate-300 transition hover:bg-violet-500/15">
-                          {c.name}{c.region ? ` — ${c.region}` : ""}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   <div>
                     <label className={label}>الجنس</label>
@@ -748,8 +715,11 @@ export default function DarkPostStudio({ onClose }) {
                   </div>
                 </div>
               </Section>
+            </div>
 
-              <Section title="الميزانية والنشر">
+            {/* عمود 3 — الميزانية والنشر والمعاينة */}
+            <div className="space-y-5">
+              <Section title="الميزانية والنشر" hint="كل إعلان يبدأ العرض تلقائياً بعد 15 دقيقة من لحظة النشر">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className={label}>اسم الإعلان</label>
@@ -776,14 +746,14 @@ export default function DarkPostStudio({ onClose }) {
                     </div>
                   </div>
                 </div>
+                <p className="mt-3 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2 text-[11px] text-violet-200">
+                  ⏱ موعد بدء العرض: بعد 15 دقيقة من النشر (تلقائي)
+                </p>
                 <button onClick={publish} disabled={busy} className={primaryBtn + " mt-4 w-full !py-3"}>
                   {busy ? <><Spinner /> جاري النشر…</> : "🌑 نشر الدارك بوست"}
                 </button>
               </Section>
-            </div>
 
-            {/* live preview + steps */}
-            <div className="space-y-5 lg:sticky lg:top-0 lg:self-start">
               <Section title="معاينة مباشرة">
                 <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#111827]">
                   <div className="flex items-center gap-2.5 p-3">

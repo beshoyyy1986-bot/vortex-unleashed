@@ -969,7 +969,7 @@ export default function SecureDashboardApp() {
     );
   }
 
-  // ── BM Creator — standalone page ──────────────────────────────
+  // ── Dark Post Studio — standalone page ────────────────────────
   if (pathname === "/dark-post-studio") {
     return (
       <ToolPage>
@@ -978,6 +978,8 @@ export default function SecureDashboardApp() {
     );
   }
 
+
+  // ── BM Creator — standalone page ──────────────────────────────
   if (pathname === "/bm-creator") {
     return (
       <ToolPage>
