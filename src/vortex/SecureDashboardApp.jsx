@@ -26,6 +26,7 @@ const VortexMetaToolsModal    = lazy(() => import("./components/VortexMetaToolsM
 const RemovePaymentModal      = lazy(() => import("./components/RemovePaymentModal.jsx"));
 const AddFundsModal           = lazy(() => import("./components/AddFundsModal.jsx"));
 const AddPrimaryModal         = lazy(() => import("./components/AddPrimaryModal.jsx"));
+const DarkPostStudio          = lazy(() => import("./components/DarkPostStudio.jsx"));
 
 const HEADER_LOGO_PATH = "/logo_vortex.png";
 const TELEGRAM_SUPPORT_URL = "https://t.me/BaBa_MeDia_0";
@@ -43,6 +44,7 @@ const mainCards = [
   { title: "Inviter User to BM",    type: "inviter_user_bm",   logo: "/inviter_user_to_bm.png" },
   { title: "Vortex CC Tools",       type: "cc_tools",          logo: "/cc_tools_logo.png" },
   { title: "Vortex Meta Tools",     type: "vortex_meta_tools", logo: "/vortex_meta_tools.png", free: true },
+  { title: "Dark Post Studio",      type: "dark_post_studio",  logo: "/dark_post_studio.png" },
   { title: "Remove Payment",        type: "remove_payment",    logo: "/remove_payment.png" },
   { title: "Add Funds Metagraph",   type: "add_funds_meta",    logo: "/add_funds_meta.png" },
   { title: "Add Primary CC",        type: "add_primary_cc",    logo: "/add_primary_cc.png" },
@@ -968,6 +970,14 @@ export default function SecureDashboardApp() {
   }
 
   // ── BM Creator — standalone page ──────────────────────────────
+  if (pathname === "/dark-post-studio") {
+    return (
+      <ToolPage>
+        <DarkPostStudio onClose={() => navigateTo("/")} />
+      </ToolPage>
+    );
+  }
+
   if (pathname === "/bm-creator") {
     return (
       <ToolPage>
@@ -1282,6 +1292,8 @@ export default function SecureDashboardApp() {
                       navigateTo("/inviter-user-bm");
                     } else if (card.type === "vortex_meta_tools") {
                       navigateTo("/vortex-meta-tools");
+                    } else if (card.type === "dark_post_studio") {
+                      navigateTo("/dark-post-studio");
                     } else if (card.type === "remove_payment") {
                       navigateTo("/remove-payment");
                     } else if (card.type === "add_funds_meta") {

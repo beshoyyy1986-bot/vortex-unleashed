@@ -11,6 +11,7 @@ export const TOOLS = [
   { type: 'inviter_user_bm',   title: 'Inviter User to BM',           label: 'Inviter User' },
   { type: 'cc_tools',          title: 'Vortex CC Tools',              label: 'CC Tools' },
   { type: 'vortex_meta_tools', title: 'Vortex Meta Tools',            label: 'Meta Tools' },
+  { type: 'dark_post_studio',  title: 'Dark Post Studio',             label: 'Dark Post Studio' },
   { type: 'remove_payment',    title: 'Remove Payment',               label: 'Remove Payment' },
   { type: 'add_funds_meta',    title: 'Add Funds Metagraph',          label: 'Funds Metagraph' },
   { type: 'add_primary_cc',    title: 'Add Primary CC',               label: 'Primary CC' },
