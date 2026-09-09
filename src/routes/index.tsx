@@ -3,6 +3,8 @@ import { lazy, Suspense } from "react";
 
 // The Vortex dashboard is a client-side app (Supabase auth, browser-only
 // state), so it mounts after hydration only.
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - plain JSX module without type declarations
 const VortexApp = lazy(() => import("../vortex/VortexApp.jsx"));
 
 export const Route = createFileRoute("/")({
