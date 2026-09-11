@@ -243,6 +243,7 @@ export default function DarkPostStudio({ onClose }) {
         status: form.status,
         special_ad_categories: [],
         buying_type: "AUCTION",
+        is_adset_budget_sharing_enabled: false,
       }, token);
       step(`تم إنشاء الحملة ${campaign.id}`);
 
