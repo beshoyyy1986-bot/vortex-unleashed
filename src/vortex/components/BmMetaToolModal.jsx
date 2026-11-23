@@ -29,12 +29,44 @@ function saveAccounts(accs) { localStorage.setItem(STORAGE_KEY, JSON.stringify(a
 
 // ── API helper ────────────────────────────────────────────────────
 async function api(endpoint, body) {
-  const r = await fetch(`/api/meta/${endpoint}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  return r.json();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+  try {
+    const response = await fetch(`/api/meta/${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    const text = await response.text();
+    let data;
+
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      return {
+        ok: false,
+        reason: response.status === 404
+          ? 'خدمة Meta API غير متاحة على هذا النشر (404).'
+          : `استجابة غير مفهومة من الخادم (HTTP ${response.status}).`,
+      };
+    }
+
+    if (!response.ok) {
+      return { ok: false, reason: data.reason ?? data.error ?? `فشل الطلب (HTTP ${response.status}).` };
+    }
+    return data;
+  } catch (error) {
+    return {
+      ok: false,
+      reason: error.name === 'AbortError'
+        ? 'انتهت مهلة الاتصال بعد 20 ثانية. تحقق من خدمة Meta API أو البروكسي وحاول مجدداً.'
+        : 'تعذر الاتصال بخدمة Meta API. تحقق من اتصال الشبكة وإعدادات الخادم.',
+    };
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 // ── Country list ──────────────────────────────────────────────────
@@ -375,9 +407,11 @@ export default function BmMetaToolModal({ onClose }) {
     setConnecting(true);
     setConnectData(null);
     setSelAccount(''); setSelPage(''); setSelPost(''); setPosts([]);
-    const data = await api('connect', { token, proxy });
-    setConnectData(data);
-    setConnecting(false);
+    try {
+      setConnectData(await api('connect', { token, proxy }));
+    } finally {
+      setConnecting(false);
+    }
   }, []);
 
   const handleAddToken = async () => {
@@ -385,15 +419,18 @@ export default function BmMetaToolModal({ onClose }) {
     const token = newToken.trim();
     const proxy = useProxy && newProxy.trim() ? newProxy.trim() : null;
     setConnecting(true);
-    const data = await api('connect', { token, proxy });
-    setConnecting(false);
-    if (!data.ok) { alert(data.reason ?? 'توكن غير صالح'); return; }
-    const label = `حساب ${new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}`;
-    const acc = { token, label, proxy, savedAt: Date.now() };
-    setAccounts(prev => prev.find(a => a.token === token) ? prev : [acc, ...prev]);
-    setActiveToken(token);
-    setConnectData(data);
-    setNewToken(''); setNewProxy(''); setUseProxy(false); setShowAddToken(false);
+    try {
+      const data = await api('connect', { token, proxy });
+      if (!data.ok) { alert(data.reason ?? 'تعذر التحقق من التوكن'); return; }
+      const label = `حساب ${new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}`;
+      const acc = { token, label, proxy, savedAt: Date.now() };
+      setAccounts(prev => prev.find(a => a.token === token) ? prev : [acc, ...prev]);
+      setActiveToken(token);
+      setConnectData(data);
+      setNewToken(''); setNewProxy(''); setUseProxy(false); setShowAddToken(false);
+    } finally {
+      setConnecting(false);
+    }
   };
 
   const handleCheckToken = async () => {
