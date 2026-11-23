@@ -522,6 +522,8 @@ export default function BmMetaToolModal({ onClose }) {
   const activePageToken = autoPageToken || manualPageToken || activeToken;
   const needsManualToken = selPage && !autoPageToken;
   const activeAcc = accounts.find(a => a.token === activeToken);
+  const selectedAdAccount = activeAccounts.find(a => a.id === selAccount);
+  const budgetCurrency = selectedAdAccount?.currency || 'عملة الحساب';
 
   const handleCreateDarkPost = async () => {
     if (!selPage || !activePageToken || !darkMessage.trim()) return;
@@ -973,7 +975,7 @@ export default function BmMetaToolModal({ onClose }) {
                   <div className="rounded-xl border border-amber-500/20 bg-black/30 p-4 space-y-3">
                     <h4 className="text-xs font-black uppercase tracking-widest text-amber-400">إعدادات الإعلان</h4>
                     <div className="grid grid-cols-2 gap-3">
-                      <Field label="الميزانية اليومية ($)">
+                      <Field label={`الميزانية اليومية (${budgetCurrency})`}>
                         <Input type="number" min={1} value={budget} onChange={e => setBudget(e.target.value)} />
                       </Field>
                       <Field label="عدد الأيام (0 = يومي)">
