@@ -102,16 +102,6 @@ function accountPath(value: string): string {
   return value.startsWith("act_") ? value : `act_${value}`;
 }
 
-function ensureUsdCurrency(currency: string | undefined): void {
-  if (currency !== "USD") {
-    throw new MetaApiError(
-      `عملة الحساب ${currency ?? "غير متاحة"} بينما حقل الميزانية بالدولار الأمريكي. لم يتم تغيير الميزانية.`,
-      undefined,
-      400,
-    );
-  }
-}
-
 function requireNoProxy(body: MetaBody): void {
   if (typeof body.proxy === "string" && body.proxy.trim()) {
     throw new MetaApiError(
@@ -433,11 +423,6 @@ async function createAd(body: MetaBody): Promise<Record<string, unknown>> {
     }
   }
 
-  const account = await graphRequest<{ currency?: string }>(adAccount, token, {
-    params: { fields: "currency" },
-  });
-  ensureUsdCurrency(account.currency);
-
   const geoLocations =
     country && country !== "WW" && /^[A-Z]{2}$/.test(country)
       ? { countries: [country] }
@@ -623,21 +608,6 @@ async function updateAd(body: MetaBody): Promise<Record<string, unknown>> {
 
   if (!status && !Object.keys(adsetChanges).length && !postId) {
     throw new MetaApiError("لا توجد تغييرات صالحة لحفظها.", undefined, 400);
-  }
-
-  if (adsetChanges["daily_budget"] !== undefined) {
-    const currentAd = await graphRequest<{ account_id?: string }>(adId, token, {
-      params: { fields: "account_id" },
-    });
-    if (!currentAd.account_id) throw new MetaApiError("تعذر تحديد عملة حساب الإعلان.");
-    const account = await graphRequest<{ currency?: string }>(
-      accountPath(currentAd.account_id),
-      token,
-      {
-        params: { fields: "currency" },
-      },
-    );
-    ensureUsdCurrency(account.currency);
   }
 
   if (status === "ACTIVE") {
