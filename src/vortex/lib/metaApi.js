@@ -2,7 +2,7 @@
 // No automation, no headless browser — plain Graph API calls with the
 // user's own access token. Tokens live in localStorage only.
 
-export const GRAPH_VERSION = "v21.0";
+export const GRAPH_VERSION = "v27.0";
 const BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
 
 export class MetaError extends Error {
